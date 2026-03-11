@@ -1,5 +1,6 @@
 <script>
   import { goto } from "$app/navigation";
+  import { onMount } from "svelte";
   export let data;
   let id = data.id;
   let melding = "";
@@ -9,6 +10,8 @@
   let notater = "";
   let notat_toggle = false;
   let notat_visning = "";
+  let ny_eller_oppdatert = "";
+  let notat_id = "";
 
   async function slett_egen_bruker(id) {
     const svar = confirm(
@@ -51,6 +54,18 @@
     notat_tittel = "";
     notat_innhold = "";
     string = "Notat lagret";
+    hent_notater();
+  }
+
+  async function oppdater_notat() {
+    const respons = await fetch("http://127.0.0.1:5000/oppdaternotat", {
+      method: "POST",
+      body: JSON.stringify({ notat_tittel, notat_innhold, id, notat_id }),
+      headers: { "Content-Type": "application/json" },
+    });
+    notat_toggle = false;
+    hent_notater();
+    string = "Endringer lagret";
   }
 
   function sjekk_lengde() {
@@ -64,7 +79,7 @@
     }
   }
 
-  function sjekk_notatlengde() {
+  function sjekk_notatlengde(ny_eller_oppdatert) {
     string = "";
     string1 = "";
     if (tittel_lengde < 4 || tittel_lengde > 12) {
@@ -74,7 +89,12 @@
       string1 = `Hold notat innen 4-1200 tegn`;
     }
     if (!string && !string1) {
-      nytt_notat();
+      if (ny_eller_oppdatert === "") {
+        nytt_notat();
+      }
+      if (ny_eller_oppdatert === "oppdatering") {
+        oppdater_notat();
+      }
     }
   }
 
@@ -98,6 +118,9 @@
     notat_toggle = true;
     notat_visning = notat;
     notat_innhold = notat[3];
+    notat_tittel = notat[2];
+    notat_id = notat[0];
+    string = "";
     return;
   }
 
@@ -119,7 +142,9 @@
     goto(`/`);
   }
 
-  hent_notater();
+  onMount(() => {
+    hent_notater();
+  });
 </script>
 
 <h1>Hei {data.brukernavn}</h1>
@@ -127,7 +152,6 @@
 <button on:click={() => (vis_input = !vis_input)}>Endre passord</button>
 <button on:click={() => logg_ut()}>Logg ut</button>
 <button on:click={() => (notat = !notat)}>Lag nytt notat</button>
-<button on:click={() => hent_notater()}>Se notater</button>
 {#if vis_input}
   <label for="passord">Nytt passord:</label>
   <input type="password" id="passord" bind:value={passord} />
@@ -146,16 +170,33 @@
   <br />
   <label for="notat_tekst">Innhold:</label>
   <textarea class="notat_innhold" bind:value={notat_innhold}></textarea>
-  <button on:click={() => sjekk_notatlengde()}>Lagre endringer</button>
+  <button on:click={() => sjekk_notatlengde(ny_eller_oppdatert)}>Lagre</button>
 {/if}
 
 {#if notat_toggle}
-  <div class="notat">
-    {notat_visning[2]} - {notat_visning[4]} - {notat_visning[5]}
-  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>Tittel</th>
+        <th>Opprettet</th>
+        <th>Sist oppdatert</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>{notat_visning[2]}</td>
+        <td>{notat_visning[4]}</td>
+        <td>{notat_visning[5]}</td>
+      </tr>
+    </tbody>
+  </table>
+  <label for="notat_tittel">Tittel:</label>
+  <input type="text" id="notat_tittel" bind:value={notat_tittel} />
   <label for="notat_tekst">Innhold:</label>
   <textarea class="notat_innhold" bind:value={notat_innhold}></textarea>
-  <button on:click={() => sjekk_notatlengde()}>Lagre</button>
+  <button on:click={() => sjekk_notatlengde("oppdatering")}
+    >Lagre endringer</button
+  >
 {/if}
 
 <h2>Notater</h2>
@@ -181,5 +222,10 @@
     display: flex;
     flex-direction: column;
     gap: 15px;
+  }
+
+  th,
+  td {
+    padding: 10px;
   }
 </style>

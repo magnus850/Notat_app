@@ -14,7 +14,7 @@ conn = mariadb.connect(
  
 cur = conn.cursor()
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "*"}})
+CORS(app)
 
 def bruker_sjekk(brukernavn, passord):
     cur.execute(
@@ -94,6 +94,12 @@ def hent_notater_db(id):
         return True, notater
     elif notater != True :
         return False, notater
+    
+def oppdater_notat_db(tittel, innhold, id, notat_id):
+    cur.execute('update notater set tittel=%s, innhold=%s where bruker_id=%s and id =%s',
+                (tittel, innhold, id, notat_id))
+    conn.commit()
+    return True
 
 #routes
 @app.route("/")
@@ -167,6 +173,16 @@ def hent_notater_route():
     id = data.get('id')
     suksess, notater = hent_notater_db(id)
     return jsonify({'suksess': suksess, 'notater': notater})
+
+@app.route('/oppdaternotat', methods = ['POST'])
+def oppdater_notat_route():
+    data = request.json
+    tittel = data.get('notat_tittel')
+    innhold = data.get('notat_innhold')
+    id = data.get('id')
+    notat_id = data.get('notat_id')
+    oppdatert = oppdater_notat_db(tittel, innhold, id, notat_id)
+    return jsonify ({'oppdatert?': oppdatert})
 
 if __name__ == "__main__":
     app.run(debug=True)

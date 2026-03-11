@@ -5,6 +5,11 @@
   let melding = "";
   let notat_tittel = "";
   let notat_innhold = "";
+  let suksess = "";
+  let notater = "";
+  let notat_toggle = false;
+  let notat_visning = "";
+
   async function slett_egen_bruker(id) {
     const svar = confirm(
       `Er du sikker på at du vil slette bruker din egen bruker?`,
@@ -73,6 +78,29 @@
     }
   }
 
+  async function hent_notater() {
+    const respons = await fetch("http://127.0.0.1:5000/hentnotater", {
+      method: "POST",
+      body: JSON.stringify({ id }),
+      headers: { "Content-Type": "application/json" },
+    });
+    const data = await respons.json();
+    suksess = data.suksess;
+    if (suksess == false) {
+      string = "Du har ingen lagrede notater";
+    }
+    if (suksess == true) {
+      notater = data.notater;
+    }
+  }
+
+  function vis_notat(notat) {
+    notat_toggle = true;
+    notat_visning = notat;
+    notat_innhold = notat[3];
+    return;
+  }
+
   const max_pa_lengde = 24;
   const min_pa_lengde = 8;
   let string = "";
@@ -90,6 +118,8 @@
   function logg_ut() {
     goto(`/`);
   }
+
+  hent_notater();
 </script>
 
 <h1>Hei {data.brukernavn}</h1>
@@ -97,6 +127,7 @@
 <button on:click={() => (vis_input = !vis_input)}>Endre passord</button>
 <button on:click={() => logg_ut()}>Logg ut</button>
 <button on:click={() => (notat = !notat)}>Lag nytt notat</button>
+<button on:click={() => hent_notater()}>Se notater</button>
 {#if vis_input}
   <label for="passord">Nytt passord:</label>
   <input type="password" id="passord" bind:value={passord} />
@@ -113,14 +144,42 @@
   <label for="notat_tittel">Tittel:</label>
   <input type="text" id="notat_tittel" bind:value={notat_tittel} />
   <br />
-  <label for="notat_innhold">Innhold:</label>
+  <label for="notat_tekst">Innhold:</label>
+  <textarea class="notat_innhold" bind:value={notat_innhold}></textarea>
+  <button on:click={() => sjekk_notatlengde()}>Lagre endringer</button>
+{/if}
+
+{#if notat_toggle}
+  <div class="notat">
+    {notat_visning[2]} - {notat_visning[4]} - {notat_visning[5]}
+  </div>
+  <label for="notat_tekst">Innhold:</label>
   <textarea class="notat_innhold" bind:value={notat_innhold}></textarea>
   <button on:click={() => sjekk_notatlengde()}>Lagre</button>
 {/if}
 
+<h2>Notater</h2>
+<div class="notater">
+  {#each notater as notat}
+    <button class="notat_innhold" on:click={() => vis_notat(notat)}>
+      {notat[2]}
+    </button>
+  {/each}
+</div>
+
 <style>
   .notat_innhold {
-    height: 300px;
-    width: 500px;
+    height: 50px;
+    width: 250px;
+    border: 1px solid;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .notater {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
   }
 </style>

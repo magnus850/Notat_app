@@ -21,7 +21,7 @@ def bruker_sjekk(brukernavn, passord):
         'SELECT id, passord, tillatelse FROM brukere WHERE bruker =%s AND passord = %s',
         (brukernavn, passord))
     resultat = cur.fetchone()
-    if resultat == None:
+    if resultat == False:
         suksess = False
         return suksess, None, None 
     elif resultat: 
@@ -84,7 +84,16 @@ def lagre_notat_db(tittel, innhold, id):
     cur.execute('insert into notater (bruker_id, tittel, innhold) values (%s, %s, %s)',
                 (id, tittel, innhold))
     conn.commit()
-    return
+    return True
+
+def hent_notater_db(id):
+    cur.execute('select * from notater where bruker_id=%s',
+                (id,))
+    notater = cur.fetchall()
+    if notater:
+        return True, notater
+    elif notater != True :
+        return False, notater
 
 #routes
 @app.route("/")
@@ -149,8 +158,15 @@ def nytt_notat_route():
     tittel = data.get('notat_tittel')
     innhold = data.get('notat_innhold')
     id = data.get('id')
-    lagre_notat_db(tittel, innhold, id)
-    return jsonify({'suksess': True})
+    suksess = lagre_notat_db(tittel, innhold, id)
+    return jsonify({'suksess': suksess})
+
+@app.route('/hentnotater', methods=['POST'])
+def hent_notater_route():
+    data = request.json
+    id = data.get('id')
+    suksess, notater = hent_notater_db(id)
+    return jsonify({'suksess': suksess, 'notater': notater})
 
 if __name__ == "__main__":
     app.run(debug=True)

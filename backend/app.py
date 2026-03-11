@@ -72,7 +72,7 @@ def endre_passord_db(id, nytt_passord):
         cur.execute('update brukere set passord =%s where id=%s',
         (nytt_passord, id))
         conn.commit()
-        return True
+        return id
     
 def endre_tillatelse(id):
     cur.execute('update brukere set tillatelse=%s where id=%s',
@@ -80,9 +80,11 @@ def endre_tillatelse(id):
     conn.commit()
     return "Vellykket tillatelse-endring"
 
-def lagre_notat_db(tittel, innhold):
-    print(tittel, innhold)
-    return tittel, innhold
+def lagre_notat_db(tittel, innhold, id):
+    cur.execute('insert into notater (bruker_id, tittel, innhold) values (%s, %s, %s)',
+                (id, tittel, innhold))
+    conn.commit()
+    return
 
 #routes
 @app.route("/")
@@ -147,7 +149,8 @@ def nytt_notat_route():
     tittel = data.get('notat_tittel')
     innhold = data.get('notat_innhold')
     id = data.get('id')
-    melding = lagre_notat_db(tittel, innhold, id)
-    return melding
+    lagre_notat_db(tittel, innhold, id)
+    return jsonify({'suksess': True})
+
 if __name__ == "__main__":
     app.run(debug=True)

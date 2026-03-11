@@ -42,6 +42,10 @@
       body: JSON.stringify({ notat_tittel, notat_innhold, id }),
       headers: { "Content-Type": "application/json" },
     });
+    notat = false;
+    notat_tittel = "";
+    notat_innhold = "";
+    string = "Notat lagret";
   }
 
   function sjekk_lengde() {
